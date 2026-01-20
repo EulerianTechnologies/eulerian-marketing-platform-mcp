@@ -26,14 +26,47 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -e .
-        pip install pytest
+        pip install pytest pytest-asyncio
     
     - name: Run basic import test
       run: |
         python -c "from eulerian_marketing_platform import main; print('Import successful')"
     
-    - name: Test server startup (with dummy env vars)
+    - name: Test module can be loaded
       run: |
-        # This will fail validation but tests the module loads correctly
-        python -c "from eulerian_marketing_platform.server import mcp; print('Server module loaded')" || echo "Expected error - no env vars set"
-      continue-on-error: true
+        python -c "import eulerian_marketing_platform.server as server; print('Module loaded successfully')"
+    
+    - name: Test with dummy environment variables
+      run: |
+        python -c "
+        import os
+        import sys
+        
+        # Set dummy env vars to pass validation
+        os.environ['EMP_API_ENDPOINT'] = 'https://test.example.com/mcp'
+        os.environ['EMP_API_TOKEN'] = 'test_token_123'
+        
+        # Import the module
+        from eulerian_marketing_platform.server import mcp, validate_config
+        
+        # Test validation passes
+        try:
+            validate_config()
+            print('✓ Validation passed with test credentials')
+        except SystemExit:
+            print('✗ Validation failed')
+            sys.exit(1)
+        
+        # Test server is configured
+        print(f'✓ Server name: {mcp.name}')
+        print('✓ All tests passed!')
+        "
+      
+    - name: Verify package metadata
+      run: |
+        python -c "
+        import eulerian_marketing_platform
+        print(f'Package version: {eulerian_marketing_platform.__version__}')
+        print(f'Package author: {eulerian_marketing_platform.__author__}')
+        print('✓ Package metadata is correct')
+        "
