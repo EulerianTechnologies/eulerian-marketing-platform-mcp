@@ -136,7 +136,7 @@ class EulerianMCPProxy:
                     logger.warning("    WARNING: Missing 'jsonrpc' field")
                 
                 if "result" in response_data:
-                    logger.info("    Has 'result' field ✓")
+                    logger.info("    Has 'result' field [OK]")
                     return response_data["result"]
                 elif "error" in response_data:
                     logger.error(f"    Has 'error' field: {response_data['error']}")
@@ -198,11 +198,11 @@ async def call_eulerian_tool(tool_name: str, arguments: dict[str, Any] = None) -
         The result from the remote tool execution
         
     Example:
-        To call a tool named "get_campaigns" with no arguments:
-        >>> call_eulerian_tool("get_campaigns")
+        To call a tool named "search_goal" with no arguments:
+        >>> call_eulerian_tool("search_goal")
         
         To call a tool with arguments:
-        >>> call_eulerian_tool("get_campaign_details", {"campaign_id": "12345"})
+            >>> call_eulerian_tool("update_goal", {"action-id": "12345","action-name":"test-mcp"})
     """
     if arguments is None:
         arguments = {}
