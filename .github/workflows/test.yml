@@ -52,14 +52,14 @@ jobs:
         # Test validation passes
         try:
             validate_config()
-            print('✓ Validation passed with test credentials')
+            print('[OK] Validation passed with test credentials')
         except SystemExit:
-            print('✗ Validation failed')
+            print('[FAILED] Validation failed')
             sys.exit(1)
         
         # Test server is configured
-        print(f'✓ Server name: {mcp.name}')
-        print('✓ All tests passed!')
+        print(f'[OK] Server name: {mcp.name}')
+        print('[OK] All tests passed!')
         "
       
     - name: Verify package metadata
@@ -68,5 +68,5 @@ jobs:
         import eulerian_marketing_platform
         print(f'Package version: {eulerian_marketing_platform.__version__}')
         print(f'Package author: {eulerian_marketing_platform.__author__}')
-        print('✓ Package metadata is correct')
+        print('[OK] Package metadata is correct')
         "
