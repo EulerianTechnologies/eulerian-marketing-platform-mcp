@@ -66,8 +66,6 @@ push-to-github.sh
 GIT_DEPLOYMENT_GUIDE.md
 COMPLETE_SUMMARY.md
 UPDATES_SUMMARY.md
-install-uvx.sh
-install-uvx.ps1
 *.tar.gz
 *.zip
 
