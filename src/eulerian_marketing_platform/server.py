@@ -12,8 +12,10 @@ import os
 import sys
 import json
 import logging
+import tempfile
 from datetime import datetime
 from typing import Any
+from pathlib import Path
 import httpx
 
 from mcp.server.fastmcp import FastMCP
@@ -25,8 +27,15 @@ from mcp import types
 EMP_API_ENDPOINT = os.environ.get("EMP_API_ENDPOINT")
 EMP_API_TOKEN = os.environ.get("EMP_API_TOKEN")
 
-# Logging setup
-LOG_FILE = os.environ.get("EMP_LOG_FILE", "/tmp/eulerian-mcp-proxy.log")
+# Logging setup - Use cross-platform temp directory
+# Default to system temp directory if EMP_LOG_FILE not set
+DEFAULT_LOG_FILE = os.path.join(tempfile.gettempdir(), "eulerian-mcp-proxy.log")
+LOG_FILE = os.environ.get("EMP_LOG_FILE", DEFAULT_LOG_FILE)
+
+# Ensure log directory exists
+log_dir = os.path.dirname(LOG_FILE)
+if log_dir:  # Only create if there's a directory part
+    os.makedirs(log_dir, exist_ok=True)
 
 # Configure logging to file and stderr
 logging.basicConfig(
