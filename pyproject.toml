@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "eulerian-marketing-platform"
+version = "0.1.0"
+description = "MCP server for Eulerian Marketing Platform - enables AI assistants to interact with Eulerian's marketing analytics and campaign management APIs"
+readme = "README.md"
+authors = [
+    {name = "Eulerian Technologies", email = "[email protected]"}
+]
+license = {text = "MIT"}
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "mcp>=1.2.0",
+    "httpx>=0.25.0",
+]
+requires-python = ">=3.10"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "mypy>=1.0.0",
+    "ruff>=0.1.0",
+]
+deployment = [
+    "uv>=0.5.0",
+]
+
+[project.scripts]
+eulerian-marketing-platform = "eulerian_marketing_platform.server:main"
+
+[project.urls]
+Homepage = "https://github.com/EulerianTechnologies/eulerian-marketing-platform-mcp"
+Issues = "https://github.com/EulerianTechnologies/eulerian-marketing-platform-mcp/issues"
+Documentation = "https://github.com/EulerianTechnologies/eulerian-marketing-platform-mcp#readme"
+Repository = "https://github.com/EulerianTechnologies/eulerian-marketing-platform-mcp"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
