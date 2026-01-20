@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "eulerian_marketing_platform"
-version = "0.1.2"
+version = "0.2.0"
 description = "MCP server for Eulerian Marketing Platform - enables AI assistants to interact with Eulerian's marketing analytics and campaign management APIs"
 readme = "README.md"
 authors = [
@@ -26,7 +26,6 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    "mcp>=1.2.0",
     "httpx>=0.25.0",
 ]
 requires-python = ">=3.10"
@@ -53,12 +52,5 @@ Issues = "https://github.com/EulerianTechnologies/eulerian-marketing-platform-mc
 Documentation = "https://github.com/EulerianTechnologies/eulerian-marketing-platform-mcp#readme"
 Repository = "https://github.com/EulerianTechnologies/eulerian-marketing-platform-mcp"
 
-[tool.setuptools]
-package-dir = {"" = "src"}
-
 [tool.setuptools.packages.find]
 where = ["src"]
-namespaces = false
-
-[tool.setuptools.package-data]
-eulerian_marketing_platform = ["py.typed"]
