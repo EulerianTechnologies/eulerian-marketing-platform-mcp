@@ -30,7 +30,7 @@ jobs:
     
     - name: Run basic import test
       run: |
-        python -c "from eulerian_marketing_platform import main; print('Import successful')"
+        python -c "import eulerian_marketing_platform; print(f'✓ Package version: {eulerian_marketing_platform.__version__}')"
     
     - name: Test module can be loaded
       run: |
