@@ -37,15 +37,20 @@ log_dir = os.path.dirname(LOG_FILE)
 if log_dir:  # Only create if there's a directory part
     os.makedirs(log_dir, exist_ok=True)
 
-# Configure logging to file and stderr
+# Configure logging to file and stderr with UTF-8 encoding for cross-platform compatibility
+file_handler = logging.FileHandler(LOG_FILE, encoding='utf-8')
+file_handler.setLevel(logging.INFO)
+file_handler.setFormatter(logging.Formatter("[%(asctime)s] %(levelname)s: %(message)s", datefmt="%Y-%m-%d %H:%M:%S"))
+
+# For stderr, use system encoding with error handling
+stream_handler = logging.StreamHandler(sys.stderr)
+stream_handler.setLevel(logging.INFO)
+stream_handler.setFormatter(logging.Formatter("[%(asctime)s] %(levelname)s: %(message)s", datefmt="%Y-%m-%d %H:%M:%S"))
+
+# Configure root logger
 logging.basicConfig(
     level=logging.INFO,
-    format="[%(asctime)s] %(levelname)s: %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-    handlers=[
-        logging.FileHandler(LOG_FILE),
-        logging.StreamHandler(sys.stderr)
-    ]
+    handlers=[file_handler, stream_handler]
 )
 logger = logging.getLogger(__name__)
 
@@ -156,137 +161,78 @@ class EulerianMCPProxy:
             raise Exception(f"Invalid JSON response: {str(e)}")
 
 
-# Create global proxy instance
-proxy = EulerianMCPProxy()
-
-# Create FastMCP server
-mcp = FastMCP("eulerian-marketing-platform")
-
-
 # Dynamically fetch and register tools from remote server
-@mcp.tool()
-async def list_remote_tools() -> dict[str, Any]:
-    """List all available tools from the remote Eulerian MCP server.
-    
-    This tool queries the remote MCP server to discover what tools are available.
-    Use this to see what operations you can perform on the Eulerian platform.
-    
-    Returns:
-        Dictionary containing the list of available tools with their descriptions
-    """
-    try:
-        result = await proxy.forward_request("tools/list")
-        return result
-    except Exception as e:
-        logger.error(f"Failed to list tools: {str(e)}")
-        return {"error": str(e), "tools": []}
-
-
-@mcp.tool()
-async def call_eulerian_tool(tool_name: str, arguments: dict[str, Any] = None) -> dict[str, Any]:
-    """Call a tool on the remote Eulerian MCP server.
-    
-    This is a generic tool that forwards requests to the remote Eulerian platform.
-    First use list_remote_tools() to see what tools are available, then call them
-    using this function.
-    
-    Args:
-        tool_name: The name of the tool to call on the remote server
-        arguments: Dictionary of arguments to pass to the tool (optional)
-        
-    Returns:
-        The result from the remote tool execution
-        
-    Example:
-        To call a tool named "search_goal" with no arguments:
-        >>> call_eulerian_tool("search_goal")
-        
-        To call a tool with arguments:
-            >>> call_eulerian_tool("update_goal", {"action-id": "12345","action-name":"test-mcp"})
-    """
-    if arguments is None:
-        arguments = {}
-    
-    try:
-        params = {
-            "name": tool_name,
-            "arguments": arguments
-        }
-        result = await proxy.forward_request("tools/call", params)
-        return result
-    except Exception as e:
-        logger.error(f"Failed to call tool '{tool_name}': {str(e)}")
-        return {"error": str(e), "tool": tool_name}
-
-
-@mcp.tool()
-async def get_eulerian_resources() -> dict[str, Any]:
-    """List all available resources from the remote Eulerian MCP server.
-    
-    Resources are data sources that can be read from the Eulerian platform,
-    such as configuration files, reports, or reference data.
-    
-    Returns:
-        Dictionary containing the list of available resources
-    """
-    try:
-        result = await proxy.forward_request("resources/list")
-        return result
-    except Exception as e:
-        logger.error(f"Failed to list resources: {str(e)}")
-        return {"error": str(e), "resources": []}
-
-
-@mcp.tool()
-async def read_eulerian_resource(uri: str) -> dict[str, Any]:
-    """Read a specific resource from the remote Eulerian MCP server.
-    
-    Args:
-        uri: The URI of the resource to read (get from get_eulerian_resources())
-        
-    Returns:
-        The content of the requested resource
-        
-    Example:
-        >>> read_eulerian_resource("eulerian://config/settings")
-    """
-    try:
-        params = {"uri": uri}
-        result = await proxy.forward_request("resources/read", params)
-        return result
-    except Exception as e:
-        logger.error(f"Failed to read resource '{uri}': {str(e)}")
-        return {"error": str(e), "uri": uri}
-
-
-@mcp.tool()
-async def get_server_info() -> dict[str, Any]:
-    """Get information about the remote Eulerian MCP server.
-    
-    Returns server capabilities, version, and other metadata.
-    
-    Returns:
-        Dictionary containing server information
-    """
-    try:
-        result = await proxy.forward_request("initialize", {
-            "protocolVersion": "2024-11-05",
-            "capabilities": {},
-            "clientInfo": {
-                "name": "eulerian-mcp-proxy",
-                "version": "0.1.0"
-            }
-        })
-        return result
-    except Exception as e:
-        logger.error(f"Failed to get server info: {str(e)}")
-        return {"error": str(e)}
+# (Tools are registered in main() to avoid running on import)
 
 
 def main() -> None:
     """Entry point for the MCP proxy server."""
     # Validate configuration before starting
     validate_config()
+    
+    # Create proxy and server instances (moved here to avoid running on import)
+    global proxy, mcp
+    proxy = EulerianMCPProxy()
+    mcp = FastMCP("eulerian-marketing-platform")
+    
+    # Register tools
+    @mcp.tool()
+    async def list_remote_tools() -> dict[str, Any]:
+        """List all available tools from the remote Eulerian MCP server."""
+        try:
+            result = await proxy.forward_request("tools/list")
+            return result
+        except Exception as e:
+            logger.error(f"Failed to list tools: {str(e)}")
+            return {"error": str(e), "tools": []}
+    
+    @mcp.tool()
+    async def call_eulerian_tool(tool_name: str, arguments: dict[str, Any] = None) -> dict[str, Any]:
+        """Call a tool on the remote Eulerian MCP server."""
+        if arguments is None:
+            arguments = {}
+        try:
+            params = {"name": tool_name, "arguments": arguments}
+            result = await proxy.forward_request("tools/call", params)
+            return result
+        except Exception as e:
+            logger.error(f"Failed to call tool '{tool_name}': {str(e)}")
+            return {"error": str(e), "tool": tool_name}
+    
+    @mcp.tool()
+    async def get_eulerian_resources() -> dict[str, Any]:
+        """List all available resources from the remote Eulerian MCP server."""
+        try:
+            result = await proxy.forward_request("resources/list")
+            return result
+        except Exception as e:
+            logger.error(f"Failed to list resources: {str(e)}")
+            return {"error": str(e), "resources": []}
+    
+    @mcp.tool()
+    async def read_eulerian_resource(uri: str) -> dict[str, Any]:
+        """Read a specific resource from the remote Eulerian MCP server."""
+        try:
+            params = {"uri": uri}
+            result = await proxy.forward_request("resources/read", params)
+            return result
+        except Exception as e:
+            logger.error(f"Failed to read resource '{uri}': {str(e)}")
+            return {"error": str(e), "uri": uri}
+    
+    @mcp.tool()
+    async def get_server_info() -> dict[str, Any]:
+        """Get information about the remote Eulerian MCP server."""
+        try:
+            result = await proxy.forward_request("initialize", {
+                "protocolVersion": "2024-11-05",
+                "capabilities": {},
+                "clientInfo": {"name": "eulerian-mcp-proxy", "version": "0.1.1"}
+            })
+            return result
+        except Exception as e:
+            logger.error(f"Failed to get server info: {str(e)}")
+            return {"error": str(e)}
     
     logger.info("Starting Eulerian MCP Proxy Server...")
     logger.info("Available tools:")

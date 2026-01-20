@@ -4,8 +4,12 @@ This package provides a Model Context Protocol (MCP) server that enables
 AI assistants to interact with Eulerian Marketing Platform APIs.
 """
 
-from .server import main
-
-__version__ = "0.1.0"
+__version__ = "0.1.2"
 __author__ = "Eulerian Technologies"
-__all__ = ["main"]
+__all__ = []
+
+# Import main only when explicitly requested
+def get_main():
+    """Lazy import of main function to avoid side effects."""
+    from .server import main
+    return main
