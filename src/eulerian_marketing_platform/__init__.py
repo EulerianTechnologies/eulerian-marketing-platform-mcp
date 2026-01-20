@@ -4,7 +4,7 @@ This package provides a Model Context Protocol (MCP) server that enables
 AI assistants to interact with Eulerian Marketing Platform APIs.
 """
 
-__version__ = "0.2.1"
+__version__ = "0.2.3"
 __author__ = "Eulerian Technologies"
 __all__ = []
 

@@ -349,6 +349,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Changelog
 
+### 0.2.3
+- fixes disconnection issue with notifications
+
 ### 0.2.0
 - Move to full Proxy mode
 - Remove instructions for uvx deployment

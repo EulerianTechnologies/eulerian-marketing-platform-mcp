@@ -191,57 +191,92 @@ def main() -> None:
     logger.info(f"Timeout: {float(os.environ.get('EMP_TIMEOUT', '300'))}s")
     logger.info("Starting stdio proxy - all remote tools will be available")
     
+    # Set stdout to unbuffered mode
+    sys.stdout.reconfigure(line_buffering=True)
+    
     try:
         # Read from stdin line by line
-        for line in sys.stdin:
-            line = line.strip()
-            if not line:
-                continue
-            
+        while True:
             try:
-                # Parse request
-                request_data = json.loads(line)
+                line = sys.stdin.readline()
                 
-                # Forward to remote server
-                response_data = forward_request(request_data)
+                # Check for EOF
+                if not line:
+                    logger.info("EOF received on stdin, exiting")
+                    break
                 
-                # Send response to stdout
-                response_json = json.dumps(response_data)
-                print(response_json, flush=True)
-                logger.info("    Response forwarded [OK]")
+                line = line.strip()
+                if not line:
+                    continue
                 
-            except json.JSONDecodeError as e:
-                logger.error(f"ERROR: Invalid JSON in request - {e}")
-                error_response = {
-                    "jsonrpc": "2.0",
-                    "id": None,
-                    "error": {
-                        "code": -32700,
-                        "message": f"Parse error: {str(e)}"
+                try:
+                    # Parse request
+                    request_data = json.loads(line)
+                    
+                    # Forward to remote server
+                    response_data = forward_request(request_data)
+                    
+                    # JSON-RPC notifications MUST NOT be answered
+                    if "id" in request_data and request_data["id"] is not None:
+                        response_json = json.dumps(response_data)
+                        print(response_json, flush=True)
+                        sys.stdout.flush()
+                        logger.info("    Response forwarded [OK]")
+                    else:
+                        logger.info("    Notification forwarded (no response sent)") 
+                except json.JSONDecodeError as e:
+                    logger.error(f"ERROR: Invalid JSON in request - {e}")
+                    logger.error(f"    Problematic line: {line[:200]}")
+                    error_response = {
+                        "jsonrpc": "2.0",
+                        "id": None,
+                        "error": {
+                            "code": -32700,
+                            "message": f"Parse error: {str(e)}"
+                        }
                     }
-                }
-                print(json.dumps(error_response), flush=True)
-            
+                    print(json.dumps(error_response), flush=True)
+                    sys.stdout.flush()
+                
+                except Exception as e:
+                    logger.error(f"ERROR: Unexpected error processing request - {str(e)}")
+                    import traceback
+                    logger.error(f"Traceback: {traceback.format_exc()}")
+                    error_response = {
+                        "jsonrpc": "2.0",
+                        "id": None,
+                        "error": {
+                            "code": -32000,
+                            "message": f"Error: {str(e)}"
+                        }
+                    }
+                    print(json.dumps(error_response), flush=True)
+                    sys.stdout.flush()
+                    
+            except EOFError:
+                logger.info("EOF on stdin, exiting")
+                break
+            except KeyboardInterrupt:
+                logger.info("Server stopped by user")
+                break
             except Exception as e:
-                logger.error(f"ERROR: Unexpected error processing request - {str(e)}")
+                logger.error(f"ERROR in main loop: {str(e)}")
                 import traceback
                 logger.error(f"Traceback: {traceback.format_exc()}")
-                error_response = {
-                    "jsonrpc": "2.0",
-                    "id": None,
-                    "error": {
-                        "code": -32000,
-                        "message": f"Error: {str(e)}"
-                    }
-                }
-                print(json.dumps(error_response), flush=True)
+                # Don't break - try to continue
+                continue
     
     except KeyboardInterrupt:
         logger.info("Server stopped by user")
     except Exception as e:
         logger.error(f"Server error: {str(e)}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
         raise
+    finally:
+        logger.info("=== EULERIAN MCP PROXY SHUTDOWN ===")
 
 
 if __name__ == "__main__":
     main()
+
