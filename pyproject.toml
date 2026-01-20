@@ -5,10 +5,10 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "eulerian-marketing-platform"
 version = "0.1.0"
-description = "MCP server for Eulerian Marketing Platform - enables AI assistants to interact with Eulerian's marketing analytics and campaign management APIs"
+description = "MCP server for Eulerian Marketing Platform - enables AI assistants to interact with Eulerian's Marketing Platform: analytics, attribution and administration management"
 readme = "README.md"
 authors = [
-    {name = "Eulerian Technologies", email = "[email protected]"}
+    {name = "Eulerian Technologies", email = "mathieu@eulerian.com"}
 ]
 license = {text = "MIT"}
 classifiers = [
