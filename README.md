@@ -349,6 +349,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Changelog
 
+### 0.2.8
+- fixes for proxy disconnection
+- remove unnecessary logging
+
 ### 0.2.3
 - fixes disconnection issue with notifications
 

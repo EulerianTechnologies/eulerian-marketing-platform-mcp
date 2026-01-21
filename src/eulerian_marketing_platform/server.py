@@ -100,10 +100,14 @@ def forward_request(request_data: dict) -> dict:
         
         logger.info(f"<<< RESPONSE: HTTP {response.status_code}")
         
+        # Handle HTTP 204 No Content (common for notifications)
+        if response.status_code == 204:
+            logger.info("    HTTP 204 No Content - creating empty success response")
+            return None
+        
         if response.status_code != 200:
             error_msg = f"HTTP {response.status_code}: {response.reason_phrase}"
             logger.error(f"    Error: {response.text[:200]}")
-            
             return {
                 "jsonrpc": "2.0",
                 "id": request_id,
@@ -113,19 +117,48 @@ def forward_request(request_data: dict) -> dict:
                 }
             }
         
-        # Parse response
+        # Parse response for HTTP 200
         try:
             response_data = response.json()
             logger.debug(f"    Response: {json.dumps(response_data)[:200]}...")
             
+            # Add detailed logging for different MCP methods
+            if "result" in response_data:
+                logger.info("    Has 'result' field [OK]")
+                
+                result = response_data.get("result", {})
+                
+                if method == "initialize":
+                    logger.info(f"    Initialize result: protocolVersion={result.get('protocolVersion')}")
+                    capabilities = result.get("capabilities", {})
+                    logger.info(f"    Server capabilities: {list(capabilities.keys())}")
+                    server_info = result.get("serverInfo", {})
+                    logger.info(f"    Server info: name={server_info.get('name')}, version={server_info.get('version')}")
+                
+                elif method == "tools/list":
+                    tools = result.get("tools", [])
+                    logger.info(f"    Tools available: {len(tools)} tools")
+                
+                elif method == "resources/list":
+                    resources = result.get("resources", [])
+                    logger.info(f"    Resources available: {len(resources)} resources")
+                
+                elif method.startswith("tools/call"):
+                    logger.info(f"    Tool call result keys: {list(result.keys())}")
+                
+                else:
+                    # Generic logging for unknown methods
+                    logger.info(f"    Method '{method}' result keys: {list(result.keys())}")
+                    
+            elif "error" in response_data:
+                error = response_data["error"]
+                error_code = error.get("code", "no code")
+                error_message = error.get("message", "no message")
+                logger.info(f"    Has 'error' field: code={error_code}, message={error_message}")
+            
             # Validate JSON-RPC response
             if "jsonrpc" not in response_data:
                 logger.warning("    WARNING: Missing 'jsonrpc' field")
-            
-            if "result" in response_data:
-                logger.info("    Has 'result' field [OK]")
-            elif "error" in response_data:
-                logger.info(f"    Has 'error' field: {response_data['error']}")
             
             return response_data
             
@@ -216,20 +249,32 @@ def main() -> None:
                     # Forward to remote server
                     response_data = forward_request(request_data)
                     
-                    # JSON-RPC notifications MUST NOT be answered
-                    if "id" in request_data and request_data["id"] is not None:
+                    # Only send response if response_data is not None (handles HTTP 204 notifications)
+                    if response_data is not None:
                         response_json = json.dumps(response_data)
                         print(response_json, flush=True)
                         sys.stdout.flush()
                         logger.info("    Response forwarded [OK]")
                     else:
-                        logger.info("    Notification forwarded (no response sent)") 
+                        logger.info("    No response sent (notification or HTTP 204)")
+                    
                 except json.JSONDecodeError as e:
                     logger.error(f"ERROR: Invalid JSON in request - {e}")
                     logger.error(f"    Problematic line: {line[:200]}")
+                    
+                    # Try to extract request_id from partial JSON, fallback to None
+                    request_id = None
+                    try:
+                        # Attempt to get ID from partial JSON
+                        if '"id"' in line:
+                            partial = json.loads(line.split('"method"')[0] + '"}')
+                            request_id = partial.get("id")
+                    except:
+                        pass
+                    
                     error_response = {
                         "jsonrpc": "2.0",
-                        "id": None,
+                        "id": request_id,
                         "error": {
                             "code": -32700,
                             "message": f"Parse error: {str(e)}"
@@ -242,9 +287,16 @@ def main() -> None:
                     logger.error(f"ERROR: Unexpected error processing request - {str(e)}")
                     import traceback
                     logger.error(f"Traceback: {traceback.format_exc()}")
+                    
+                    # Try to get request_id if request_data was parsed successfully
+                    try:
+                        request_id = request_data.get("id") if 'request_data' in locals() else None
+                    except:
+                        request_id = None
+                    
                     error_response = {
                         "jsonrpc": "2.0",
-                        "id": None,
+                        "id": request_id,
                         "error": {
                             "code": -32000,
                             "message": f"Error: {str(e)}"
@@ -279,4 +331,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
