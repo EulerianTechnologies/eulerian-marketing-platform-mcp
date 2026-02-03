@@ -347,6 +347,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Documentation**: https://github.com/EulerianTechnologies/eulerian-marketing-platform-mcp#readme
 - **Eulerian Technologies**: https://www.eulerian.com
 
+## MCP server for MCP Registry
+
+mcp-name: io.github.matjmat/eulerian-marketing-platform-mcp
+
 ## Changelog
 
 ### 0.2.8
