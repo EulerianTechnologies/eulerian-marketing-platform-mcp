@@ -39,6 +39,10 @@ The proxy:
 - One of the following AI clients:
   - Claude Desktop (Windows, macOS, Linux)
   - Gemini CLI
+  - Codex CLI (macOS, Linux)
+  - Claude Code (macOS, Linux)
+  - Cursor (Windows, macOS, Linux)
+  - VS Code with GitHub Copilot (Windows, macOS, Linux)
 
 ## Available Tools
 
@@ -298,6 +302,285 @@ codex mcp remove eulerian-marketing-platform
   ```bash
   tail -f /tmp/eulerian-mcp-proxy.log
   ```
+
+---
+
+### 4. Claude Code
+
+Claude Code is Anthropic's terminal-based coding agent. It supports MCP servers configured via the `claude mcp` CLI command or by editing `~/.claude.json`.
+
+#### Prerequisites
+
+- Node.js 18+ and npm
+- Claude Code installed: `npm install -g @anthropic-ai/claude-code`
+- Python 3.10+ with this package installed (`pip install eulerian-marketing-platform`)
+- An Anthropic API key or Claude subscription
+
+#### Option A: Using the `claude mcp add` command (easiest)
+
+```bash
+claude mcp add eulerian-marketing-platform \
+  -e EMP_API_ENDPOINT=https://your-eulerian-instance.com/mcp \
+  -e EMP_API_TOKEN=your_authentication_token_here \
+  -- python -m eulerian_marketing_platform.server
+```
+
+By default this adds the server with **local** scope (current project only). To make it available in all projects, add the `-s user` flag:
+
+```bash
+claude mcp add -s user eulerian-marketing-platform \
+  -e EMP_API_ENDPOINT=https://your-eulerian-instance.com/mcp \
+  -e EMP_API_TOKEN=your_authentication_token_here \
+  -- python -m eulerian_marketing_platform.server
+```
+
+#### Option B: Edit `~/.claude.json` manually
+
+Open `~/.claude.json` and add the server under the `mcpServers` key:
+
+```json
+{
+  "mcpServers": {
+    "eulerian-marketing-platform": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["-m", "eulerian_marketing_platform.server"],
+      "env": {
+        "EMP_API_ENDPOINT": "https://your-eulerian-instance.com/mcp",
+        "EMP_API_TOKEN": "your_authentication_token_here"
+      }
+    }
+  }
+}
+```
+
+#### Verify the connection
+
+1. Launch Claude Code:
+   ```bash
+   claude
+   ```
+2. Type `/mcp` to see the status of all connected MCP servers.
+3. Confirm that `eulerian-marketing-platform` appears and shows as **connected**.
+4. Try asking:
+   ```
+   What Eulerian Marketing Platform tools do you have access to?
+   ```
+
+#### Managing the server
+
+```bash
+# List all configured MCP servers
+claude mcp list
+
+# Get details for a specific server
+claude mcp get eulerian-marketing-platform
+
+# Remove the server
+claude mcp remove eulerian-marketing-platform
+```
+
+#### Troubleshooting (Claude Code)
+
+- **Server not appearing in `/mcp`**: Run `claude mcp list` to confirm it is registered. Check `~/.claude.json` for JSON syntax errors.
+- **Python not found**: Ensure the `python` command resolves to Python 3.10+. You may need to use `python3` instead.
+- **Package not found**: Make sure `eulerian-marketing-platform` is installed in the Python environment that Claude Code will invoke.
+- **Debug mode**: Launch Claude Code with verbose MCP logging:
+  ```bash
+  claude --mcp-debug
+  ```
+- **Check logs**: Monitor the proxy logs for detailed error information:
+  ```bash
+  tail -f /tmp/eulerian-mcp-proxy.log
+  ```
+
+---
+
+### 5. Cursor
+
+Cursor is an AI-powered code editor with built-in MCP support.
+
+#### Prerequisites
+
+- Cursor installed (download from [cursor.com](https://www.cursor.com))
+- Python 3.10+ with this package installed (`pip install eulerian-marketing-platform`)
+
+#### Configuration File Location
+
+- **Global**: `~/.cursor/mcp.json`
+- **Project-scoped**: `.cursor/mcp.json` in your project root
+
+#### Setup Steps
+
+1. **Open (or create) the configuration file**:
+
+```bash
+# Global configuration
+mkdir -p ~/.cursor
+nano ~/.cursor/mcp.json
+```
+
+2. **Add the MCP server configuration**:
+
+```json
+{
+  "mcpServers": {
+    "eulerian-marketing-platform": {
+      "command": "python",
+      "args": ["-m", "eulerian_marketing_platform.server"],
+      "env": {
+        "EMP_API_ENDPOINT": "https://your-eulerian-instance.com/mcp",
+        "EMP_API_TOKEN": "your_authentication_token_here"
+      }
+    }
+  }
+}
+```
+
+3. **Restart Cursor** to load the new configuration.
+
+4. **Verify the connection**:
+   - Open Cursor Settings → **Tools & Integrations** → **MCP Servers**
+   - Confirm that `eulerian-marketing-platform` appears and shows a green status
+   - Switch to **Agent mode** in the Copilot pane
+   - Ask: "What Eulerian Marketing Platform tools do you have access to?"
+
+#### Platform-Specific Notes
+
+**Windows**:
+- Global config file: `%USERPROFILE%\.cursor\mcp.json`
+- If `python` is not in your PATH, use the full path to the Python executable in the `command` field.
+
+**macOS/Linux**:
+- Standard location: `~/.cursor/mcp.json`
+
+#### Troubleshooting (Cursor)
+
+- **Server not appearing**: Verify that `~/.cursor/mcp.json` contains valid JSON. Restart Cursor after any config change.
+- **Tools not available**: Make sure you are in **Agent mode** (not Ask mode) in the Cursor chat panel.
+- **Python not found**: Ensure the `python` command resolves to Python 3.10+. You may need to use `python3` or a full path.
+- **Check logs**: Monitor the proxy logs:
+  ```bash
+  tail -f /tmp/eulerian-mcp-proxy.log
+  ```
+
+---
+
+### 6. VS Code / GitHub Copilot
+
+Visual Studio Code supports MCP servers through GitHub Copilot's Agent mode. MCP requires VS Code 1.101 or later.
+
+#### Prerequisites
+
+- VS Code 1.101+ with the GitHub Copilot extension
+- Python 3.10+ with this package installed (`pip install eulerian-marketing-platform`)
+- A GitHub Copilot subscription
+
+#### Configuration File Locations
+
+- **Workspace**: `.vscode/mcp.json` in your project root (recommended)
+- **User/Global**: accessible via the command `MCP: Open User Configuration`
+
+> **Note:** VS Code uses a `"servers"` key (not `"mcpServers"`) inside `mcp.json`.
+
+#### Setup Steps
+
+1. **Create the workspace configuration file**:
+
+```bash
+mkdir -p .vscode
+nano .vscode/mcp.json
+```
+
+2. **Add the MCP server configuration**:
+
+```json
+{
+  "servers": {
+    "eulerian-marketing-platform": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["-m", "eulerian_marketing_platform.server"],
+      "env": {
+        "EMP_API_ENDPOINT": "https://your-eulerian-instance.com/mcp",
+        "EMP_API_TOKEN": "your_authentication_token_here"
+      }
+    }
+  }
+}
+```
+
+Alternatively, to make the server available globally across all workspaces, add the configuration to your **User Settings (JSON)** (`Ctrl+Shift+P` → `Preferences: Open User Settings (JSON)`):
+
+```json
+{
+  "mcp": {
+    "servers": {
+      "eulerian-marketing-platform": {
+        "type": "stdio",
+        "command": "python",
+        "args": ["-m", "eulerian_marketing_platform.server"],
+        "env": {
+          "EMP_API_ENDPOINT": "https://your-eulerian-instance.com/mcp",
+          "EMP_API_TOKEN": "your_authentication_token_here"
+        }
+      }
+    }
+  }
+}
+```
+
+3. **Start the MCP server**:
+   - Open the `.vscode/mcp.json` file in the editor
+   - Click the **Start** button that appears above the server definition (code lens)
+   - Or use the Command Palette: `MCP: List Servers` → select the server → Start
+
+4. **Verify the connection**:
+   - Switch to **Agent mode** in the GitHub Copilot Chat panel (toggle located near the chat input)
+   - Click the **Tools** button (🔧) in the Copilot pane to see available Eulerian tools
+   - Ask: "What Eulerian Marketing Platform tools do you have access to?"
+
+#### Using input variables for secrets
+
+To avoid hardcoding your token, you can use VS Code input variables:
+
+```json
+{
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "empToken",
+      "description": "Eulerian Marketing Platform API Token",
+      "password": true
+    }
+  ],
+  "servers": {
+    "eulerian-marketing-platform": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["-m", "eulerian_marketing_platform.server"],
+      "env": {
+        "EMP_API_ENDPOINT": "https://your-eulerian-instance.com/mcp",
+        "EMP_API_TOKEN": "${input:empToken}"
+      }
+    }
+  }
+}
+```
+
+VS Code will prompt you for the token when the server starts.
+
+#### Troubleshooting (VS Code)
+
+- **MCP not available**: Ensure you are running VS Code **1.101 or later** and have the GitHub Copilot extension installed and enabled.
+- **Tools not appearing**: MCP tools only work in **Agent mode**. Toggle to Agent mode in the Copilot Chat panel.
+- **Start button not showing**: The code lens (Start button) only appears if the `.vscode` folder is at the root of your workspace.
+- **Python not found**: Ensure the `python` command resolves to Python 3.10+. You may need to use `python3` or a full path.
+- **Check logs**: Monitor the proxy logs:
+  ```bash
+  tail -f /tmp/eulerian-mcp-proxy.log
+  ```
+
 
 ---
 
