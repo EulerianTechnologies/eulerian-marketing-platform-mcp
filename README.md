@@ -216,6 +216,91 @@ gemini
 
 ---
 
+### 3. Codex CLI
+
+Codex CLI supports MCP servers configured in `~/.codex/config.toml`. The configuration is shared between the CLI and the Codex IDE extension (VS Code).
+
+#### Prerequisites
+
+- Node.js 18+ and npm
+- Codex CLI installed: `npm install -g @openai/codex`
+- Python 3.10+ with this package installed (`pip install eulerian-marketing-platform`)
+- A ChatGPT Plus, Pro, Team, Edu, or Enterprise subscription (or an OpenAI API key)
+
+#### Option A: Using the `codex mcp add` command (easiest)
+
+Run the following command to register the Eulerian MCP server:
+
+```bash
+codex mcp add eulerian-marketing-platform \
+  --env EMP_API_ENDPOINT=https://your-eulerian-instance.com/mcp \
+  --env EMP_API_TOKEN=your_authentication_token_here \
+  -- python -m eulerian_marketing_platform.server
+```
+
+That's it — Codex will update `~/.codex/config.toml` for you.
+
+#### Option B: Edit `config.toml` manually
+
+Open (or create) `~/.codex/config.toml` and add the following:
+
+```toml
+[mcp_servers.eulerian-marketing-platform]
+command = "python"
+args = ["-m", "eulerian_marketing_platform.server"]
+tool_timeout_sec = 300
+
+[mcp_servers.eulerian-marketing-platform.env]
+EMP_API_ENDPOINT = "https://your-eulerian-instance.com/mcp"
+EMP_API_TOKEN = "your_authentication_token_here"
+```
+
+> **Note:** The section name **must** use `mcp_servers` (with an underscore). Using `mcp-servers` or any other variant will silently fail.
+
+#### Option C: Project-scoped configuration
+
+To limit the MCP server to a specific project, create a `.codex/config.toml` file at the root of that project with the same content as above. The project must be marked as trusted by Codex.
+
+#### Verify the connection
+
+1. Launch Codex in your terminal:
+   ```bash
+   codex
+   ```
+2. Type `/mcp` in the interactive TUI to see all connected MCP servers.
+3. Confirm that `eulerian-marketing-platform` appears in the list with its available tools.
+4. Try asking:
+   ```
+   What Eulerian Marketing Platform tools do you have access to?
+   ```
+
+#### Managing the server
+
+```bash
+# List all configured MCP servers
+codex mcp
+
+# Remove the server
+codex mcp remove eulerian-marketing-platform
+```
+
+#### Troubleshooting (Codex CLI)
+
+- **Server not appearing in `/mcp`**: Verify that the `[mcp_servers.eulerian-marketing-platform]` section is present in `~/.codex/config.toml` and that the TOML syntax is valid.
+- **Timeout errors**: Increase `tool_timeout_sec` in config.toml (default is 60 seconds). Eulerian queries can take longer, so `300` is recommended.
+- **Authentication errors**: Double-check that `EMP_API_ENDPOINT` and `EMP_API_TOKEN` are correct.
+- **Python not found**: Ensure the `python` command resolves to Python 3.10+. You may need to use `python3` instead:
+  ```toml
+  command = "python3"
+  ```
+- **Package not found**: Make sure `eulerian-marketing-platform` is installed in the Python environment that Codex will invoke. Run `python -m eulerian_marketing_platform.server` manually to confirm it works.
+- **Check logs**: Monitor the proxy logs for detailed error information:
+  ```bash
+  tail -f /tmp/eulerian-mcp-proxy.log
+  ```
+
+---
+
 ## Usage Examples
 
 Once configured with any client, you can interact with your remote Eulerian Marketing Platform:
