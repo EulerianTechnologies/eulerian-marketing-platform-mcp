@@ -3,9 +3,6 @@ mcp>=1.2.0
 httpx>=0.25.0
 
 # Optional: For development
-# pytest>=7.0.0
-# pytest-asyncio>=0.21.0
-# pytest-cov>=4.0.0
-# black>=23.0.0
-# mypy>=1.0.0
-# ruff>=0.1.0
+pytest
+pytest-asyncio
+pytest-env
