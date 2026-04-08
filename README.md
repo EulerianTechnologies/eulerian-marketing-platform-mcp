@@ -20,6 +20,10 @@ The proxy:
 - 📝 Provides comprehensive logging for debugging
 - ⚡ Uses async HTTP for better performance
 
+## Warning
+ Given the rapid pace of evolution of protocols, implementations and new features coming out, the MCP may or may not be compatible with your suite of tools.
+ Please fill in an issue so that we can check it.
+
 ## Features
 
 - **🔌 Proxy Architecture**: Bridges local MCP clients to remote Eulerian MCP server via HTTP
