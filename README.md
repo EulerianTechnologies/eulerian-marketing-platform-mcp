@@ -37,7 +37,7 @@ The proxy:
 
 ## Prerequisites
 
-- Python 3.10 or higher
+- Python 3.10 or higher - [Install Python](https://www.python.org/downloads/windows/)
 - Access to a remote Eulerian Marketing Platform MCP server (HTTP endpoint)
 - Valid authentication token for the remote server
 - One of the following AI clients:
@@ -57,6 +57,8 @@ All API Endpoints supported by the [Eulerian API](https://doc.api.eulerian.com) 
 ### Quick Start (Recommended)
 
 The easiest way to use this MCP server is with `pip`.
+
+Make sure `pip` is installed : `python -m pip install --upgrade pip`
 
 ### Install via pip
 
