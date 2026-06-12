@@ -121,7 +121,7 @@ pip install eulerian-marketing-platform
 
 **Install steps**:
 
-1. Download `eulerian-marketing-platform-0.2.9.dxt` from the [releases page](https://github.com/EulerianTechnologies/eulerian-marketing-platform-mcp/releases)
+1. Download the latest `.dxt` file from the [releases page](https://github.com/EulerianTechnologies/eulerian-marketing-platform-mcp/releases/latest)
 2. Double-click the `.dxt` file — Claude Desktop opens an installation dialog
 3. Enter your **API Endpoint** and **API Token** when prompted
 4. Click **Install** — the server is ready immediately
