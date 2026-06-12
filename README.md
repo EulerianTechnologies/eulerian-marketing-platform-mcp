@@ -107,6 +107,31 @@ EMP_TIMEOUT=600
 
 ### 1. Claude Desktop
 
+Two installation methods are available. The DXT extension is the easiest — no terminal required.
+
+#### Option A: One-click DXT Extension (Recommended)
+
+[Desktop Extensions (DXT)](https://github.com/anthropics/dxt) let you install MCP servers in Claude Desktop with a single double-click, without editing JSON config files.
+
+**Requirements**: Python 3.10+ with the package installed:
+
+```bash
+pip install eulerian-marketing-platform
+```
+
+**Install steps**:
+
+1. Download `eulerian-marketing-platform-0.2.9.dxt` from the [releases page](https://github.com/EulerianTechnologies/eulerian-marketing-platform-mcp/releases)
+2. Double-click the `.dxt` file — Claude Desktop opens an installation dialog
+3. Enter your **API Endpoint** and **API Token** when prompted
+4. Click **Install** — the server is ready immediately
+
+That's it. No `pip install`, no config file editing, no restart required.
+
+To update: download the new `.dxt` and double-click it again.
+
+#### Option B: Manual JSON configuration
+
 Claude Desktop supports local MCP servers via stdio transport.
 
 #### Configuration File Locations
@@ -692,13 +717,13 @@ cd eulerian-marketing-platform-mcp
 # Install in development mode
 pip install -e .
 
-# Build distribution
+# Build Python distribution (wheel + tarball)
 pip install build
 python -m build
 
-# This creates:
-# dist/eulerian_marketing_platform-0.1.0.tar.gz
-# dist/eulerian_marketing_platform-0.1.0-py3-none-any.whl
+# Build DXT extension for Claude Desktop
+npx @anthropic-ai/dxt pack .
+# → eulerian-marketing-platform-mcp.dxt
 ```
 
 ## Contributing
@@ -726,6 +751,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 mcp-name: io.github.matjmat/eulerian-marketing-platform-mcp
 
 ## Changelog
+
+### 0.2.9
+- Add `manifest.json` for Claude Desktop DXT extension support
+- DXT package: one-click install with credential prompts, no JSON config editing
 
 ### 0.2.8
 - fixes for proxy disconnection

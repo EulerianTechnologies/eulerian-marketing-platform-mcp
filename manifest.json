@@ -1,0 +1,62 @@
+{
+  "dxt_version": "0.1",
+  "name": "eulerian-marketing-platform",
+  "display_name": "Eulerian Marketing Platform",
+  "version": "0.2.9",
+  "description": "MCP proxy connecting Claude Desktop to the Eulerian Marketing Platform analytics and campaign management API.",
+  "long_description": "A transparent MCP proxy that forwards all requests from Claude Desktop to the remote Eulerian Marketing Platform server over HTTPS with Bearer token authentication.\n\nOnce configured, Claude can query campaign data, analyze audience segments, explore attribution models, and interact with all Eulerian Analytics API endpoints. All tools and resources are served dynamically from the remote Eulerian server — no local tool definitions required.\n\nRequires an active Eulerian account with API credentials.",
+  "author": {
+    "name": "Eulerian Technologies",
+    "email": "mathieu@eulerian.com",
+    "url": "https://www.eulerian.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/EulerianTechnologies/eulerian-marketing-platform-mcp"
+  },
+  "homepage": "https://github.com/EulerianTechnologies/eulerian-marketing-platform-mcp",
+  "license": "MIT",
+  "keywords": ["eulerian", "marketing", "analytics", "mcp", "proxy"],
+  "server": {
+    "type": "python",
+    "entry_point": "src/eulerian_marketing_platform/server.py",
+    "mcp_config": {
+      "command": "python",
+      "args": ["-m", "eulerian_marketing_platform.server"],
+      "env": {
+        "EMP_API_ENDPOINT": "${user_config.emp_api_endpoint}",
+        "EMP_API_TOKEN": "${user_config.emp_api_token}",
+        "EMP_TIMEOUT": "${user_config.emp_timeout}"
+      }
+    }
+  },
+  "user_config": {
+    "emp_api_endpoint": {
+      "type": "string",
+      "title": "API Endpoint",
+      "description": "Your Eulerian MCP server URL (e.g. https://your-instance.eulerian.net/mcp)",
+      "required": true
+    },
+    "emp_api_token": {
+      "type": "string",
+      "title": "API Token",
+      "description": "Your Eulerian API authentication token",
+      "required": true,
+      "sensitive": true
+    },
+    "emp_timeout": {
+      "type": "number",
+      "title": "Request Timeout (seconds)",
+      "description": "Maximum wait time for API responses. Increase for long-running queries.",
+      "required": false,
+      "default": 300
+    }
+  },
+  "compatibility": {
+    "claude_desktop": ">=0.10.0",
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": {
+      "python": ">=3.10"
+    }
+  }
+}
