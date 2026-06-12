@@ -6,11 +6,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-and-publish:
+  build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
     steps:
     - uses: actions/checkout@v4
 
@@ -37,15 +34,44 @@ jobs:
         VERSION=$(grep '^version = ' pyproject.toml | cut -d'"' -f2)
         npx @anthropic-ai/dxt pack . dist/eulerian-marketing-platform-${VERSION}.dxt
 
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist
+        path: dist/
+
+  publish-pypi:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: dist
+        path: dist/
+
     - name: Publish to PyPI
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
       run: |
+        pip install twine
         python -m twine upload dist/*.whl dist/*.tar.gz
 
+  publish-dxt:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    permissions:
+      contents: write
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: dist
+        path: dist/
+
     - name: Upload DXT to GitHub Release
-      if: github.event_name == 'release'
       uses: softprops/action-gh-release@v2
       with:
         files: dist/*.dxt
