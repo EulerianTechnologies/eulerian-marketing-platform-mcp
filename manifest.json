@@ -2,7 +2,7 @@
   "dxt_version": "0.1",
   "name": "eulerian-marketing-platform",
   "display_name": "Eulerian Marketing Platform",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "MCP proxy connecting Claude Desktop to the Eulerian Marketing Platform analytics and campaign management API.",
   "long_description": "A transparent MCP proxy that forwards all requests from Claude Desktop to the remote Eulerian Marketing Platform server over HTTPS with Bearer token authentication.\n\nOnce configured, Claude can query campaign data, analyze audience segments, explore attribution models, and interact with all Eulerian Analytics API endpoints. All tools and resources are served dynamically from the remote Eulerian server — no local tool definitions required.\n\nRequires an active Eulerian account with API credentials.",
   "author": {
