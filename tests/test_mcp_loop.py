@@ -93,12 +93,9 @@ async def test_mcp_tool_call_sse(client: httpx.AsyncClient):
     }
     print_curl_equivalent("POST", payload, sse=True)
 
-    # Server returns plain JSON regardless of Accept header — SSE not supported
     headers = {"Accept": "text/event-stream"}
     async with client.stream("POST", "", json=payload, headers=headers) as response:
         assert response.status_code == 200
-        body = b""
         async for chunk in response.aiter_bytes():
-            body += chunk
-        data = json.loads(body)
-        assert "result" in data or "error" in data
+            assert b"data:" in chunk
+            break
