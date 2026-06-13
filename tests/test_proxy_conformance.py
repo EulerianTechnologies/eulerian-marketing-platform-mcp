@@ -19,6 +19,18 @@ pytestmark = pytest.mark.skipif(
 
 MCP_PROTOCOL_VERSION = "2024-11-05"
 
+REQUIRED_TOOLS = [
+    "getallowedwebsite_account",
+    "how_to_query_flat_aggregate_batch_reporting",
+    "flat_aggregate_batch_reporting",
+    "kinds_batch_reporting",
+    "metrics_batch_reporting",
+    "dimensions_batch_reporting",
+    "segmentations_batch_reporting",
+    "ask_documentation_account",
+    "eulerian_tool_invoke",
+]
+
 
 @pytest.fixture(scope="module")
 def proxy():
@@ -81,6 +93,13 @@ def test_initialized_notification_does_not_crash(proxy):
     # No response expected — proxy must not crash. Verified implicitly by subsequent tests.
 
 
+def test_ping(proxy):
+    """ping must return an empty result object per MCP spec."""
+    resp = rpc(proxy, "ping", req_id=5)
+    assert "result" in resp, f"Expected result, got: {resp}"
+    assert resp["result"] == {}, f"ping must return empty object, got: {resp['result']}"
+
+
 # ---------------------------------------------------------------------------
 # Tool discovery
 # ---------------------------------------------------------------------------
@@ -93,9 +112,17 @@ def test_tools_list_returns_tools(proxy):
     assert len(resp["result"]["tools"]) > 0, "Tool list is empty"
 
 
+def test_required_tools_always_present(proxy):
+    """Contract tools must always be present regardless of account or config."""
+    resp = rpc(proxy, "tools/list", req_id=11)
+    tool_names = {t["name"] for t in resp["result"]["tools"]}
+    for required in REQUIRED_TOOLS:
+        assert required in tool_names, f"Required tool missing from tools/list: '{required}'"
+
+
 def test_tools_list_schema_shape(proxy):
     """Every tool must have name, description, and a valid inputSchema per MCP spec."""
-    resp = rpc(proxy, "tools/list", req_id=11)
+    resp = rpc(proxy, "tools/list", req_id=12)
     tools = resp["result"]["tools"]
 
     for tool in tools:
@@ -105,9 +132,18 @@ def test_tools_list_schema_shape(proxy):
         assert "inputSchema" in tool, f"Tool '{name}' missing 'inputSchema'"
         schema = tool["inputSchema"]
         assert isinstance(schema, dict), f"Tool '{name}' inputSchema must be an object"
-        assert schema.get("type") == "object", (
+        assert schema.get("type") == "object", \
             f"Tool '{name}' inputSchema.type must be 'object', got: {schema.get('type')}"
-        )
+        if "properties" in schema:
+            assert isinstance(schema["properties"], dict), \
+                f"Tool '{name}' inputSchema.properties must be an object"
+        if "required" in schema:
+            assert isinstance(schema["required"], list), \
+                f"Tool '{name}' inputSchema.required must be an array"
+            if "properties" in schema:
+                for field in schema["required"]:
+                    assert field in schema["properties"], \
+                        f"Tool '{name}': required field '{field}' not declared in properties"
 
 
 # ---------------------------------------------------------------------------
@@ -149,6 +185,58 @@ def test_tool_call_unknown_tool_returns_error(proxy):
     assert is_jsonrpc_error or is_tool_error, (
         f"Expected error or isError=true for unknown tool, got: {resp}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Prompts — not implemented, well-defined error contract
+# ---------------------------------------------------------------------------
+
+def test_prompts_list_returns_empty(proxy):
+    """prompts/list must return an empty array (no prompts implemented)."""
+    resp = rpc(proxy, "prompts/list", req_id=60)
+    assert "result" in resp, f"Expected result, got: {resp}"
+    assert resp["result"].get("prompts") == [], \
+        f"prompts/list must return empty array, got: {resp['result'].get('prompts')}"
+
+
+def test_prompts_get_returns_32602(proxy):
+    """prompts/get must return -32602 (Invalid Params) — no prompts are defined."""
+    resp = rpc(proxy, "prompts/get", {"name": "nonexistent_prompt"}, req_id=61)
+    assert "error" in resp, f"Expected JSON-RPC error, got: {resp}"
+    assert resp["error"].get("code") == -32602, \
+        f"Expected -32602 (Invalid Params), got: {resp['error'].get('code')}"
+
+
+# ---------------------------------------------------------------------------
+# Resources
+# ---------------------------------------------------------------------------
+
+def test_resources_list(proxy):
+    """resources/list must return a valid list with uri and name on each entry."""
+    resp = rpc(proxy, "resources/list", req_id=70)
+    assert "result" in resp, f"Expected result, got: {resp}"
+    assert "resources" in resp["result"], "resources/list result must have 'resources' key"
+    for resource in resp["result"]["resources"]:
+        assert "uri" in resource, f"Resource missing 'uri': {resource}"
+        assert "name" in resource, f"Resource missing 'name': {resource}"
+
+
+def test_resources_read(proxy):
+    """resources/read must return contents with uri and text or blob per MCP spec."""
+    list_resp = rpc(proxy, "resources/list", req_id=71)
+    resources = list_resp["result"]["resources"]
+
+    if not resources:
+        pytest.skip("No resources available to read")
+
+    uri = resources[0]["uri"]
+    resp = rpc(proxy, "resources/read", {"uri": uri}, req_id=72)
+    assert "result" in resp, f"Expected result, got: {resp}"
+    assert "contents" in resp["result"], "resources/read result must have 'contents'"
+    for item in resp["result"]["contents"]:
+        assert "uri" in item, f"Content item missing 'uri': {item}"
+        assert "text" in item or "blob" in item, \
+            f"Content item must have 'text' or 'blob': {item}"
 
 
 # ---------------------------------------------------------------------------
