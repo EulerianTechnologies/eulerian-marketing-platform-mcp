@@ -96,6 +96,39 @@ async def test_mcp_tool_call_sse(client: httpx.AsyncClient):
     headers = {"Accept": "text/event-stream"}
     async with client.stream("POST", "", json=payload, headers=headers) as response:
         assert response.status_code == 200
-        async for chunk in response.aiter_bytes():
-            assert b"data:" in chunk
-            break
+
+        # Content-Type must be text/event-stream per SSE spec
+        content_type = response.headers.get("content-type", "")
+        assert "text/event-stream" in content_type, (
+            f"Expected text/event-stream, got: {content_type}"
+        )
+
+        # Collect all SSE events
+        events = []
+        buffer = ""
+        async for chunk in response.aiter_text():
+            buffer += chunk
+            # SSE events are separated by double newlines
+            while "\n\n" in buffer:
+                event_block, buffer = buffer.split("\n\n", 1)
+                for line in event_block.splitlines():
+                    if line.startswith("data:"):
+                        data = line[len("data:"):].strip()
+                        if data and data != "[DONE]":
+                            events.append(json.loads(data))
+
+        assert len(events) > 0, "No SSE events received"
+
+        # Each event must be a valid JSON-RPC envelope
+        for event in events:
+            assert event.get("jsonrpc") == "2.0", f"Missing jsonrpc field: {event}"
+            assert "result" in event or "error" in event, (
+                f"Event must have result or error: {event}"
+            )
+
+        # At least one event must carry the tool result
+        results = [e for e in events if "result" in e and e.get("id") == 4]
+        assert len(results) > 0, "No event matched request id=4"
+        assert "content" in results[0]["result"], (
+            f"Tool result must have content array: {results[0]}"
+        )
