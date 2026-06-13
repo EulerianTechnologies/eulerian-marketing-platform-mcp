@@ -94,10 +94,18 @@ def test_initialized_notification_does_not_crash(proxy):
 
 
 def test_ping(proxy):
-    """ping must return an empty result object per MCP spec."""
+    """ping must identify the Eulerian server and report ok status."""
     resp = rpc(proxy, "ping", req_id=5)
     assert "result" in resp, f"Expected result, got: {resp}"
-    assert resp["result"] == {}, f"ping must return empty object, got: {resp['result']}"
+    result = resp["result"]
+    assert result.get("status") == "ok", \
+        f"ping status must be 'ok', got: {result.get('status')}"
+    assert result.get("server") == "eulerian-marketing-platform", \
+        f"ping server must be 'eulerian-marketing-platform', got: {result.get('server')}"
+    assert result.get("platform"), \
+        f"ping platform must be non-empty, got: {result.get('platform')}"
+    assert result.get("timestamp"), \
+        f"ping timestamp must be non-empty, got: {result.get('timestamp')}"
 
 
 # ---------------------------------------------------------------------------

@@ -68,7 +68,15 @@ async def test_mcp_ping(client: httpx.AsyncClient):
     assert response.status_code == 200
     data = response.json()
     assert "result" in data
-    assert data["result"] == {}, f"ping must return empty object, got: {data['result']}"
+    result = data["result"]
+    assert result.get("status") == "ok", \
+        f"ping status must be 'ok', got: {result.get('status')}"
+    assert result.get("server") == "eulerian-marketing-platform", \
+        f"ping server must be 'eulerian-marketing-platform', got: {result.get('server')}"
+    assert result.get("platform"), \
+        f"ping platform must be non-empty, got: {result.get('platform')}"
+    assert result.get("timestamp"), \
+        f"ping timestamp must be non-empty, got: {result.get('timestamp')}"
 
 
 # ---------------------------------------------------------------------------
