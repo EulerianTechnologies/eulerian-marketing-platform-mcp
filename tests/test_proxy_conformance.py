@@ -132,12 +132,23 @@ def test_tool_call_response_shape(proxy):
 
 
 def test_tool_call_unknown_tool_returns_error(proxy):
-    """Calling a non-existent tool must return a JSON-RPC error."""
+    """Calling a non-existent tool must signal failure.
+
+    Per MCP spec, servers may return either a JSON-RPC error or a result
+    with isError=true — both are valid tool-level error representations.
+    """
     resp = rpc(proxy, "tools/call", {
         "name": "__nonexistent_tool__",
         "arguments": {},
     }, req_id=30)
-    assert "error" in resp, f"Expected error for unknown tool, got: {resp}"
+    is_jsonrpc_error = "error" in resp
+    is_tool_error = (
+        "result" in resp
+        and resp["result"].get("isError") is True
+    )
+    assert is_jsonrpc_error or is_tool_error, (
+        f"Expected error or isError=true for unknown tool, got: {resp}"
+    )
 
 
 # ---------------------------------------------------------------------------
