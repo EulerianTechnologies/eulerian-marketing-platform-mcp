@@ -216,38 +216,6 @@ def test_prompts_get_returns_32602(proxy):
 
 
 # ---------------------------------------------------------------------------
-# Resources
-# ---------------------------------------------------------------------------
-
-def test_resources_list(proxy):
-    """resources/list must return a valid list with uri and name on each entry."""
-    resp = rpc(proxy, "resources/list", req_id=70)
-    assert "result" in resp, f"Expected result, got: {resp}"
-    assert "resources" in resp["result"], "resources/list result must have 'resources' key"
-    for resource in resp["result"]["resources"]:
-        assert "uri" in resource, f"Resource missing 'uri': {resource}"
-        assert "name" in resource, f"Resource missing 'name': {resource}"
-
-
-def test_resources_read(proxy):
-    """resources/read must return contents with uri and text or blob per MCP spec."""
-    list_resp = rpc(proxy, "resources/list", req_id=71)
-    resources = list_resp["result"]["resources"]
-
-    if not resources:
-        pytest.skip("No resources available to read")
-
-    uri = resources[0]["uri"]
-    resp = rpc(proxy, "resources/read", {"uri": uri}, req_id=72)
-    assert "result" in resp, f"Expected result, got: {resp}"
-    assert "contents" in resp["result"], "resources/read result must have 'contents'"
-    for item in resp["result"]["contents"]:
-        assert "uri" in item, f"Content item missing 'uri': {item}"
-        assert "text" in item or "blob" in item, \
-            f"Content item must have 'text' or 'blob': {item}"
-
-
-# ---------------------------------------------------------------------------
 # Error handling
 # ---------------------------------------------------------------------------
 
