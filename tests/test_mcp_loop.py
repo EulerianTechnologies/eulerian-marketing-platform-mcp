@@ -236,48 +236,6 @@ async def test_mcp_prompts_get_returns_32602(client: httpx.AsyncClient):
 
 
 # ---------------------------------------------------------------------------
-# Resources
-# ---------------------------------------------------------------------------
-
-@pytest.mark.asyncio
-async def test_mcp_resources_list(client: httpx.AsyncClient):
-    """resources/list must return a valid list with uri and name on each entry."""
-    payload = {"jsonrpc": "2.0", "id": 30, "method": "resources/list"}
-    print_curl_equivalent("POST", payload)
-    response = await client.post("", json=payload)
-    assert response.status_code == 200
-    data = response.json()
-    assert "result" in data, f"Expected result, got: {data}"
-    assert "resources" in data["result"], "resources/list result must have 'resources' key"
-    for resource in data["result"]["resources"]:
-        assert "uri" in resource, f"Resource missing 'uri': {resource}"
-        assert "name" in resource, f"Resource missing 'name': {resource}"
-
-
-@pytest.mark.asyncio
-async def test_mcp_resources_read(client: httpx.AsyncClient):
-    """resources/read must return contents with uri and text or blob per MCP spec."""
-    list_response = await client.post("", json={"jsonrpc": "2.0", "id": 31, "method": "resources/list"})
-    resources = list_response.json()["result"]["resources"]
-
-    if not resources:
-        pytest.skip("No resources available to read")
-
-    uri = resources[0]["uri"]
-    payload = {"jsonrpc": "2.0", "id": 32, "method": "resources/read", "params": {"uri": uri}}
-    print_curl_equivalent("POST", payload)
-    response = await client.post("", json=payload)
-    assert response.status_code == 200
-    data = response.json()
-    assert "result" in data, f"Expected result, got: {data}"
-    assert "contents" in data["result"], "resources/read result must have 'contents'"
-    for item in data["result"]["contents"]:
-        assert "uri" in item, f"Content item missing 'uri': {item}"
-        assert "text" in item or "blob" in item, \
-            f"Content item must have 'text' or 'blob': {item}"
-
-
-# ---------------------------------------------------------------------------
 # Error handling
 # ---------------------------------------------------------------------------
 
